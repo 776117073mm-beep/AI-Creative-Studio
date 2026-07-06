@@ -1,0 +1,6 @@
+{
+  "name": "AI Creative Studio",
+  "description": "Next-generation universal AI-powered creative operating system and workspace foundation with high-performance 3D Spatial and VFX engines.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
