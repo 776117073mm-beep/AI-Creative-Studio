@@ -22,7 +22,7 @@ import Projects from "./pages/Projects";
 import NewProjectWizard from "./pages/NewProjectWizard";
 import Workspace from "./pages/Workspace";
 import MediaLibrary from "./pages/MediaLibrary";
-import Timeline from "./pages/Timeline";
+import TimelinePage from "./pages/TimelinePage";
 
 // AI and Module views
 import AICommandCenter from "./pages/AICommandCenter";
@@ -37,9 +37,12 @@ import SubtitleStudio from "./pages/SubtitleStudio";
 import ImageStudio from "./pages/ImageStudio";
 import ThreeDStudio from "./pages/ThreeDStudio";
 import AnimationStudio from "./pages/AnimationStudio";
+import KeyframeStudio from "./pages/KeyframeStudio";
 import RenderCenter from "./pages/RenderCenter";
+import RenderCenterNew from "./pages/RenderCenterNew";
 import ExportCenter from "./pages/ExportCenter";
 import AssetManager from "./pages/AssetManager";
+import AssetManagerNew from "./pages/AssetManagerNew";
 import TemplateMarketplace from "./pages/TemplateMarketplace";
 import PluginCenter from "./pages/PluginCenter";
 
@@ -328,9 +331,9 @@ export default function App() {
         );
       case "timeline":
         return (
-          <Timeline 
-            onNavigate={setActivePage} 
-            projectName={currentProject.name} 
+          <TimelinePage
+            onNavigate={setActivePage}
+            projectName={currentProject.name}
           />
         );
       case "ai-command-center":
@@ -364,12 +367,14 @@ export default function App() {
         return <ThreeDStudio onNavigate={setActivePage} />;
       case "animation-studio":
         return <AnimationStudio onNavigate={setActivePage} />;
+      case "keyframe-studio":
+        return <KeyframeStudio onNavigate={setActivePage} />;
       case "render-center":
         return (
-          <RenderCenter 
-            renderQueue={renderQueue} 
-            onCancelRender={(id) => setRenderQueue(prev => prev.filter(job => job.id !== id))}
-            onClearQueue={() => setRenderQueue([])}
+          <RenderCenterNew
+            onNavigate={setActivePage}
+            renderQueue={renderQueue}
+            setRenderQueue={setRenderQueue}
           />
         );
       case "export-center":
@@ -381,10 +386,11 @@ export default function App() {
         );
       case "asset-manager":
         return (
-          <AssetManager 
-            mediaLibrary={mediaLibrary} 
-            onUploadMedia={handleUploadMedia} 
-            onDeleteMedia={handleDeleteMedia} 
+          <AssetManagerNew
+            mediaLibrary={mediaLibrary}
+            onUploadMedia={handleUploadMedia}
+            onDeleteMedia={handleDeleteMedia}
+            onNavigate={setActivePage}
           />
         );
       case "template-marketplace":

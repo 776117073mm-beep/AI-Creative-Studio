@@ -61,10 +61,12 @@ export interface RenderJob {
   resolution: string;
   fps: number;
   progress: number;
-  status: "idle" | "rendering" | "completed" | "failed";
+  status: "idle" | "rendering" | "completed" | "failed" | "queued";
   eta?: string;
   priority: "low" | "medium" | "high";
   elapsed: string;
+  outputPath?: string;
+  settings?: Record<string, any>;
 }
 
 export interface SystemStats {

@@ -1,35 +1,32 @@
 {
-  "name": "react-example",
+  "name": "ai-creative-studio",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
-    "dev": "vite --port=3000 --host=0.0.0.0",
-    "build": "vite build",
-    "preview": "vite preview",
-    "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@google/genai": "^2.4.0",
-    "@tailwindcss/vite": "^4.1.14",
-    "@vitejs/plugin-react": "^5.0.4",
-    "lucide-react": "^0.546.0",
-    "react": "^19.0.1",
-    "react-dom": "^19.0.1",
-    "vite": "^6.2.3",
-    "express": "^4.21.2",
-    "dotenv": "^17.2.3",
-    "motion": "^12.23.24"
+    "dev": "concurrently \"npm run dev:web\" \"npm run dev:services\"",
+    "dev:web": "npm run dev -w @ai-creative-studio/web",
+    "dev:services": "npm run dev -w @ai-creative-studio/services",
+    "build": "npm run build:core && npm run build:engines && npm run build:apps",
+    "build:core": "npm run build -w @ai-creative-studio/core",
+    "build:engines": "npm run build -w @ai-creative-studio/creative-engine -w @ai-creative-studio/timeline-engine -w @ai-creative-studio/rendering-engine -w @ai-creative-studio/animation-engine -w @ai-creative-studio/asset-engine -w @ai-creative-studio/media-engine -w @ai-creative-studio/audio-engine -w @ai-creative-studio/image-engine -w @ai-creative-studio/video-engine -w @ai-creative-studio/effects-engine -w @ai-creative-studio/project-engine -w @ai-creative-studio/ai-engine -w @ai-creative-studio/command-engine -w @ai-creative-studio/state-engine -w @ai-creative-studio/plugin-engine -w @ai-creative-studio/export-engine -w @ai-creative-studio/template-engine -w @ai-creative-studio/collaboration-engine",
+    "build:apps": "npm run build -w @ai-creative-studio/web",
+    "test": "npm run test --workspaces",
+    "lint": "eslint packages apps --ext .ts,.tsx",
+    "typecheck": "tsc --build"
   },
   "devDependencies": {
-    "@types/node": "^22.14.0",
-    "autoprefixer": "^10.4.21",
-    "esbuild": "^0.25.0",
-    "tailwindcss": "^4.1.14",
-    "tsx": "^4.21.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.3",
-    "@types/express": "^4.17.21"
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.57.0",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }

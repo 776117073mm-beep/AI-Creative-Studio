@@ -1,0 +1,13 @@
+{
+  "name": "@ai-creative-studio/creative-engine",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@ai-creative-studio/core": "file:../core"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}

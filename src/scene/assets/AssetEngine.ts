@@ -1,5 +1,7 @@
 import { Asset3D } from "../core/types";
 
+export type { Asset3D };
+
 export class AssetEngine {
   private static instance: AssetEngine | null = null;
 
