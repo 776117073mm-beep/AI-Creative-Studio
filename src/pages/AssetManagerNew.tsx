@@ -1,9 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import {
-  File, FolderPlus, Search, Grid, List, Download, Trash2, Plus,
-  Image as ImageIcon, Video, Music, Maximize2, Sparkles, Tag,
-  FolderOpen, Star, Clock, HardDrive, Filter, RefreshCw, Eye
-} from "lucide-react";
+import { File, FolderPlus, Search, Grid2x2 as Grid, List, Download, Trash2, Plus, Image as ImageIcon, Video, Music, Maximize2, Sparkles, Tag, FolderOpen, Star, Clock, HardDrive, ListFilter as Filter, RefreshCw, Eye } from "lucide-react";
 import { MediaAsset, PageId } from "../types";
 import { AssetEngine, Asset3D } from "../scene/assets/AssetEngine";
 

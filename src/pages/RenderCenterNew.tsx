@@ -1,9 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import {
-  Play, Pause, Settings, Download, Trash2, RefreshCw,
-  ChevronDown, ChevronUp, Clock, HardDrive, Monitor,
-  Zap, AlertCircle, CheckCircle, XCircle, Film, Image, Music
-} from "lucide-react";
+import { Play, Pause, Settings, Download, Trash2, RefreshCw, ChevronDown, ChevronUp, Clock, HardDrive, Monitor, Zap, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Circle as XCircle, Film, Image, Music } from "lucide-react";
 import { PageId, RenderJob } from "../types";
 import { RenderEngine, RenderTask } from "../media/render/RenderEngine";
 import {
