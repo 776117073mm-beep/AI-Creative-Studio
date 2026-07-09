@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { 
   Scissors, 
   Magnet, 
@@ -26,6 +26,7 @@ export interface TimelineClip {
 interface MultiTrackTimelineProps {
   currentTimeSec: number;
   durationSec: number;
+  clips?: TimelineClip[];
   onTimeChange: (time: number) => void;
   selectedClipId: string | null;
   onSelectClip: (clipId: string | null) => void;
@@ -35,6 +36,7 @@ interface MultiTrackTimelineProps {
 export default function MultiTrackTimeline({
   currentTimeSec,
   durationSec,
+  clips,
   onTimeChange,
   selectedClipId,
   onSelectClip,
@@ -47,7 +49,7 @@ export default function MultiTrackTimeline({
     { id: "m2", timeSec: 10.2, label: "VFX Particle Burst" }
   ]);
 
-  const [clips, setClips] = useState<TimelineClip[]>([
+  const defaultClips: TimelineClip[] = [
     { id: "v1", name: "Cyberpunk_Streaks_A.mp4", trackId: "video", startSec: 0, durationSec: 5.5, colorClass: "bg-blue-500 border-blue-400" },
     { id: "v2", name: "Tokyo_Drone_Pan.mp4", trackId: "video", startSec: 5.5, durationSec: 6.5, colorClass: "bg-blue-500 border-blue-400" },
     { id: "v3", name: "Ending_Credits_Logo.mp4", trackId: "video", startSec: 12, durationSec: 3, colorClass: "bg-blue-600 border-blue-500" },
@@ -58,7 +60,17 @@ export default function MultiTrackTimeline({
     
     { id: "t1", name: "NEBULA TOKYO 2026", trackId: "text", startSec: 1.0, durationSec: 4.5, colorClass: "bg-rose-500 border-rose-400" },
     { id: "t2", name: "CYBER NETWORKS", trackId: "text", startSec: 6.5, durationSec: 5.0, colorClass: "bg-rose-500 border-rose-400" }
-  ]);
+  ];
+
+  const [clipsState, setClipsState] = useState<TimelineClip[]>(clips ?? defaultClips);
+
+  const effectiveClips = clips ?? clipsState;
+
+  useEffect(() => {
+    if (clips) {
+      setClipsState(clips);
+    }
+  }, [clips]);
 
   const tracks: Array<{ id: "video" | "audio" | "effects" | "text"; label: string; bg: string }> = [
     { id: "video", label: "Video Tracks (V1)", bg: "bg-blue-50/50" },
@@ -82,8 +94,8 @@ export default function MultiTrackTimeline({
         0, 
         durationSec,
         ...markers.map(m => m.timeSec),
-        ...clips.map(c => c.startSec),
-        ...clips.map(c => c.startSec + c.durationSec)
+        ...effectiveClips.map(c => c.startSec),
+        ...effectiveClips.map(c => c.startSec + c.durationSec)
       ];
       for (const pt of snapPoints) {
         if (Math.abs(targetTime - pt) < 0.2) {
@@ -97,7 +109,7 @@ export default function MultiTrackTimeline({
   };
 
   const handleSplitClip = () => {
-    const currentActiveClip = clips.find(c => c.id === selectedClipId);
+    const currentActiveClip = effectiveClips.find(c => c.id === selectedClipId);
     if (!currentActiveClip) {
       alert("Please select a timeline clip to split first.");
       return;
@@ -132,21 +144,21 @@ export default function MultiTrackTimeline({
       name: `${currentActiveClip.name} [Part 2]`
     };
 
-    const updatedClips = clips.filter(c => c.id !== selectedClipId).concat(leftClip, rightClip);
-    setClips(updatedClips);
+    const updatedClips = clipsState.filter(c => c.id !== selectedClipId).concat(leftClip, rightClip);
+    setClipsState(updatedClips);
     onSelectClip(leftClip.id);
     if (onClipsChange) onClipsChange(updatedClips);
     console.log(`[Timeline] Splitting clip ${currentActiveClip.name} at ${currentTimeSec.toFixed(2)}s.`);
   };
 
   const handleTrimClip = (dir: "left" | "right") => {
-    const currentActiveClip = clips.find(c => c.id === selectedClipId);
+    const currentActiveClip = effectiveClips.find(c => c.id === selectedClipId);
     if (!currentActiveClip) {
       alert("Select a clip to trim.");
       return;
     }
 
-    const updated = clips.map(c => {
+    const updated = clipsState.map(c => {
       if (c.id === selectedClipId) {
         if (dir === "left") {
           // Trim start of clip
@@ -168,14 +180,14 @@ export default function MultiTrackTimeline({
       return c;
     });
 
-    setClips(updated);
+    setClipsState(updated);
     if (onClipsChange) onClipsChange(updated);
   };
 
   const handleDeleteClip = () => {
     if (!selectedClipId) return;
-    const updated = clips.filter(c => c.id !== selectedClipId);
-    setClips(updated);
+    const updated = clipsState.filter(c => c.id !== selectedClipId);
+    setClipsState(updated);
     onSelectClip(null);
     if (onClipsChange) onClipsChange(updated);
   };
@@ -350,7 +362,7 @@ export default function MultiTrackTimeline({
                 onClick={handleTimelineClick}
                 className={`flex-1 relative ${track.bg} overflow-hidden`}
               >
-                {clips
+                {effectiveClips
                   .filter(clip => clip.trackId === track.id)
                   .map(clip => {
                     const leftPct = (clip.startSec / durationSec) * 100;

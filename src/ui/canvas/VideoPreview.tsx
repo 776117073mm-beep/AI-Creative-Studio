@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { 
   Play, 
   Pause, 
@@ -24,6 +24,9 @@ interface VideoPreviewProps {
   onPlayToggle: () => void;
   colorGradeCurveEnabled?: boolean;
   activeWorkspace?: string;
+  resolution?: "1080p" | "4K" | "8K";
+  onResolutionChange?: (resolution: "1080p" | "4K" | "8K") => void;
+  onCanvasReady?: (canvas: HTMLCanvasElement | null) => void;
 }
 
 export default function VideoPreview({
@@ -33,14 +36,30 @@ export default function VideoPreview({
   isPlaying,
   onPlayToggle,
   colorGradeCurveEnabled = false,
-  activeWorkspace = "video"
+  activeWorkspace = "video",
+  resolution,
+  onResolutionChange,
+  onCanvasReady
 }: VideoPreviewProps) {
-  const [resolution, setResolution] = useState<"1080p" | "4K" | "8K">("4K");
+  const [resolutionOption, setResolutionOption] = useState<"1080p" | "4K" | "8K">("4K");
   const [aspectRatio, setAspectRatio] = useState<"16:9" | "9:16" | "1:1">("16:9");
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showSafeAreas, setShowSafeAreas] = useState(false);
   const [showBeforeAfterSplit, setShowBeforeAfterSplit] = useState(false);
   const [beforeAfterSplitPos, setBeforeAfterSplitPos] = useState(50); // percentage
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    if (onCanvasReady) {
+      onCanvasReady(canvasRef.current);
+    }
+  }, [onCanvasReady]);
+
+  useEffect(() => {
+    if (onResolutionChange) {
+      onResolutionChange(resolutionOption);
+    }
+  }, [resolutionOption, onResolutionChange]);
 
   // Format frames to human SMPTE
   const formatTimecode = (seconds: number) => {
@@ -88,8 +107,8 @@ export default function VideoPreview({
           </select>
 
           <select 
-            value={resolution} 
-            onChange={(e) => setResolution(e.target.value as any)}
+            value={resolutionOption} 
+            onChange={(e) => setResolutionOption(e.target.value as any)}
             className="px-2 py-1 bg-btn-bg border border-border-light rounded-lg text-[10px] font-bold text-text-dark cursor-pointer focus:outline-none"
           >
             <option value="1080p">1080p HD</option>
@@ -124,8 +143,11 @@ export default function VideoPreview({
                 : "aspect-square w-full max-w-[320px] sm:max-w-[360px]"
           }`}
         >
-          {/* Mock Canvas Display stream background */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-950/40 via-slate-900/40 to-black"></div>
+          <canvas
+            ref={canvasRef}
+            className="absolute inset-0 w-full h-full"
+            style={{ imageRendering: 'pixelated' }}
+          />
 
           {/* Scene content mapping based on active workspace */}
           {activeWorkspace === "3d" ? (

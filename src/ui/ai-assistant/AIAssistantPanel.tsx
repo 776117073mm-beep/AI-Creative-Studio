@@ -19,13 +19,21 @@ interface AIAssistantPanelProps {
   onTriggerAutoSub: () => void;
   onTriggerAutoColor: () => void;
   onSendMessage: (msg: string) => void;
+  onSubmitPrompt?: (prompt: string) => Promise<void>;
+  isSubmitting?: boolean;
+  statusSteps?: Array<{ id: string | number; label: string; status: "idle" | "running" | "completed" | "failed" }>;
+  summary?: string;
 }
 
 export default function AIAssistantPanel({
   onTriggerAutoCut,
   onTriggerAutoSub,
   onTriggerAutoColor,
-  onSendMessage
+  onSendMessage,
+  onSubmitPrompt,
+  isSubmitting = false,
+  statusSteps = [],
+  summary = ""
 }: AIAssistantPanelProps) {
   const [chatInput, setChatInput] = useState("");
   const [chatHistory, setChatHistory] = useState<Array<{ sender: "user" | "copilot"; text: string; time: string }>>([
@@ -39,9 +47,8 @@ export default function AIAssistantPanel({
     { id: 4, label: "SMPTE Metadata injection", status: "idle" }
   ]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!chatInput.trim()) return;
-    
     const userMsg = chatInput.trim();
     const updated = [
       ...chatHistory,
@@ -50,6 +57,22 @@ export default function AIAssistantPanel({
     setChatHistory(updated);
     setChatInput("");
     onSendMessage(userMsg);
+
+    if (onSubmitPrompt) {
+      try {
+        await onSubmitPrompt(userMsg);
+        setChatHistory(prev => [
+          ...prev,
+          { sender: "copilot" as const, text: "Great, your request is running through the orchestration pipeline.", time: "Just now" }
+        ]);
+      } catch (err) {
+        setChatHistory(prev => [
+          ...prev,
+          { sender: "copilot" as const, text: `Oops — ${err instanceof Error ? err.message : String(err)}`, time: "Just now" }
+        ]);
+      }
+      return;
+    }
 
     // Simulate smart agent planning and executing
     setTimeout(() => {
@@ -181,6 +204,12 @@ export default function AIAssistantPanel({
         </div>
       </div>
 
+      {summary && (
+        <div className="mt-3 rounded-2xl bg-surface-elevated border border-border-light p-3 text-[10px] text-gray-500 font-mono">
+          {summary}
+        </div>
+      )}
+
       {/* Input box */}
       <div className="pt-3 border-t border-border-light shrink-0">
         <div className="flex items-center space-x-2">
@@ -203,18 +232,33 @@ export default function AIAssistantPanel({
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            className="flex-1 px-3 py-2.5 bg-white border border-border-light rounded-xl text-xs font-semibold focus:outline-none"
+            disabled={isSubmitting}
+            className="flex-1 px-3 py-2.5 bg-white border border-border-light rounded-xl text-xs font-semibold focus:outline-none disabled:opacity-50"
           />
 
           <button 
             onClick={handleSend}
-            className="p-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-xs transition-all cursor-pointer"
+            disabled={isSubmitting}
+            className="p-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed disabled:bg-purple-400"
             title="Send command"
           >
             <Send className="w-4 h-4" />
           </button>
         </div>
       </div>
+
+      {statusSteps.length > 0 && (
+        <div className="mt-3 space-y-2">
+          {statusSteps.map(step => (
+            <div key={step.id} className="flex items-center justify-between text-[10px] font-mono text-gray-500">
+              <span>{step.label}</span>
+              <span className={`font-bold ${step.status === "running" ? "text-emerald-600" : step.status === "completed" ? "text-sky-600" : step.status === "failed" ? "text-rose-600" : "text-gray-400"}`}>
+                {step.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

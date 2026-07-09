@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import WorkspaceSwitcher, { CreativeWorkspaceType } from "../workspaces/WorkspaceSwitcher";
 import VideoPreview from "../canvas/VideoPreview";
-import MultiTrackTimeline, { TimelineClip } from "../timeline/MultiTrackTimeline";
+import MultiTrackTimeline from "../timeline/MultiTrackTimeline";
 import ContextualInspector from "../inspector/ContextualInspector";
 import MediaPanel, { LibraryItem } from "../panels/MediaPanel";
 import AIAssistantPanel from "../ai-assistant/AIAssistantPanel";
 import Viewport3D from "../viewport/Viewport3D";
+import { useTimelineState } from "../../hooks/useTimelineState";
+import { usePreviewRenderer } from "../../hooks/usePreviewRenderer";
+import { useAIOrchestrator } from "../../hooks/useAIOrchestrator";
+import { useBillingGuard } from "../../hooks/useBillingGuard";
 
 import { 
   Sparkles, 
@@ -30,37 +34,89 @@ export default function WorkspaceManager({
   // Global Workspace synchronizer states
   const [activeWorkspace, setActiveWorkspace] = useState<CreativeWorkspaceType>("video");
   const [isProfessionalMode, setIsProfessionalMode] = useState(true);
-  
-  const [currentTimeSec, setCurrentTimeSec] = useState(3.5);
-  const [durationSec, setDurationSec] = useState(15.0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedClipId, setSelectedClipId] = useState<string | null>("v1");
   const [selectedMeshId, setSelectedMeshId] = useState<string>("obj_m1");
   const [colorGradeEnabled, setColorGradeEnabled] = useState(false);
+  const [preferredResolution, setPreferredResolution] = useState<"1080p" | "4K" | "8K">("4K");
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [premiumErrorMessage, setPremiumErrorMessage] = useState<string>("");
+
+  const {
+    timeline,
+    currentTime,
+    setCurrentTime,
+    refresh,
+    upsertClip,
+    removeClip,
+    addTrack,
+    splitClip,
+    trimClip,
+    dispatch: dispatchTimeline
+  } = useTimelineState();
+
+  const currentTimeSec = currentTime;
+  const durationSec = timeline?.duration ?? 15.0;
+
+  const {
+    canvasRef,
+    initCanvas,
+    setRenderContext,
+    startLoop,
+    stopLoop,
+    isReady: previewReady,
+    renderFrame
+  } = usePreviewRenderer();
+
+  const {
+    isLoading: isOrchestrating,
+    statusSteps,
+    summary: orchestratorSummary,
+    submitPrompt
+  } = useAIOrchestrator(async () => {
+    refresh();
+    renderFrame();
+  });
+
+  const {
+    account,
+    canUsePremium,
+    validateFeature,
+    lockJobCredits,
+    finalizeJobCredits,
+    upgradeToPro,
+    estimateJobCost
+  } = useBillingGuard();
 
   // Playback timeline interval ticker simulation
   useEffect(() => {
     let ticker: any = null;
     if (isPlaying) {
       ticker = setInterval(() => {
-        setCurrentTimeSec(prev => {
-          if (prev >= durationSec) {
-            return 0; // loop back to start
-          }
-          return prev + 0.1; // increment 100ms
-        });
+        setCurrentTime(currentTime + 0.1 >= durationSec ? 0 : currentTime + 0.1);
       }, 100);
-    } else {
-      if (ticker) clearInterval(ticker);
     }
     return () => {
       if (ticker) clearInterval(ticker);
     };
-  }, [isPlaying, durationSec]);
+  }, [isPlaying, durationSec, currentTime, setCurrentTime]);
+
+  useEffect(() => {
+    if (timeline) {
+      setRenderContext(timeline, currentTime);
+    }
+  }, [timeline, currentTime, setRenderContext]);
+
+  useEffect(() => {
+    if (previewReady) {
+      startLoop();
+    }
+    return () => stopLoop();
+  }, [previewReady, startLoop, stopLoop]);
 
   // AI macro automated helper triggers
   const handleTriggerAutoCut = () => {
-    setCurrentTimeSec(0);
+    setCurrentTime(0);
     alert("Antigravity scene-parser completed. Generated 4 split cuts and synced to audio snare beats.");
   };
 
@@ -190,16 +246,34 @@ export default function WorkspaceManager({
               onTriggerAutoSub={handleTriggerAutoSub}
               onTriggerAutoColor={handleTriggerAutoColor}
               onSendMessage={handleAiSendMessage}
+              onSubmitPrompt={async (prompt) => {
+                try {
+                  const result = await submitPrompt(prompt);
+                  if (!result.success) {
+                    setPremiumErrorMessage("AI orchestration failed. Please try again later.");
+                  }
+                  return;
+                } catch (err) {
+                  setPremiumErrorMessage(err instanceof Error ? err.message : String(err));
+                  throw err;
+                }
+              }}
+              isSubmitting={isOrchestrating}
+              statusSteps={statusSteps}
+              summary={orchestratorSummary}
             />
           ) : (
             <VideoPreview 
               currentTimeSec={currentTimeSec}
               durationSec={durationSec}
-              onTimeChange={setCurrentTimeSec}
+              onTimeChange={setCurrentTime}
               isPlaying={isPlaying}
               onPlayToggle={() => setIsPlaying(!isPlaying)}
               colorGradeCurveEnabled={colorGradeEnabled}
               activeWorkspace={activeWorkspace}
+              resolution={preferredResolution}
+              onResolutionChange={setPreferredResolution}
+              onCanvasReady={initCanvas}
             />
           )}
         </div>
@@ -222,7 +296,7 @@ export default function WorkspaceManager({
           <MultiTrackTimeline 
             currentTimeSec={currentTimeSec}
             durationSec={durationSec}
-            onTimeChange={setCurrentTimeSec}
+            onTimeChange={setCurrentTime}
             selectedClipId={selectedClipId}
             onSelectClip={setSelectedClipId}
           />
