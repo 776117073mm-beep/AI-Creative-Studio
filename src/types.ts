@@ -17,7 +17,6 @@ export type PageId =
   | "image-studio"
   | "3d-studio"
   | "animation-studio"
-  | "keyframe-studio"
   | "render-center"
   | "export-center"
   | "asset-manager"

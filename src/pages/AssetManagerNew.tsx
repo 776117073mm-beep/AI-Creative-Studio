@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { File, FolderPlus, Search, Grid2x2 as Grid, List, Download, Trash2, Plus, Image as ImageIcon, Video, Music, Maximize2, Sparkles, Tag, FolderOpen, Star, Clock, HardDrive, ListFilter as Filter, RefreshCw, Eye } from "lucide-react";
 import { MediaAsset, PageId } from "../types";
 import { AssetEngine, Asset3D } from "../scene/assets/AssetEngine";
-import { useApp } from "../context/AppContext";
 
 interface AssetManagerNewProps {
   mediaLibrary: MediaAsset[];
@@ -92,7 +91,6 @@ export default function AssetManagerNew({
   onDeleteMedia,
   onNavigate
 }: AssetManagerNewProps) {
-  const { commandDispatcher } = useApp();
   const assetEngine = useRef(AssetEngine.getInstance());
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -168,33 +166,36 @@ export default function AssetManagerNew({
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*,video/*,audio/*";
-    input.multiple = true;
 
     input.onchange = async (e) => {
-      const files = Array.from((e.target as HTMLInputElement).files || []);
-      if (files.length === 0) return;
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
 
       setIsProcessingAI(true);
 
-      for (const file of files) {
-        try {
-          const result = await commandDispatcher.dispatch({
-            name: 'asset:import',
-            payload: { file },
-            priority: 70,
-          });
-          if (result.success && result.data) {
-            onUploadMedia(result.data);
-          }
-        } catch (err) {
-          console.error('Import failed:', err);
-        }
-      }
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      const type = file.type.startsWith("video") ? "video"
+        : file.type.startsWith("audio") ? "audio"
+        : "image";
+
+      const newMedia: MediaAsset = {
+        id: `media_${Date.now()}`,
+        name: file.name,
+        type,
+        size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+        thumbnail: "",
+        resolution: type === "video" ? "1920x1080" : type === "image" ? "4K" : "Stereo 48kHz",
+        duration: "0:00",
+        addedAt: "Just now",
+      };
+
+      onUploadMedia(newMedia);
       setIsProcessingAI(false);
     };
 
     input.click();
-  }, [onUploadMedia, commandDispatcher]);
+  }, [onUploadMedia]);
 
   const handleToggleFavorite = useCallback((assetId: string) => {
     setAssets(prev =>
